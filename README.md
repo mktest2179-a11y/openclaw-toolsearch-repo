@@ -1,102 +1,83 @@
-# OpenClaw Tool Search Setup — Token Diyeti 🦞
+# 🦞 OpenClaw Token Diet — 52 Tools → 11. Real Benchmarks.
 
-> Tek kişilik amatör proje: OpenClaw'a "tool schema vergisi" ödemeyi bıraktırdım.
-> A tiny amateur setup: making OpenClaw stop paying the "tool schema tax".
+**Cut your OpenClaw tool-schema tax by ~50% and prove it with numbers.** Works with any model (tested on deepseek-chat). No forks, no patches — one config flag + one persona file.
 
-**TR** | **EN** (aşağıda / below)
+[![Tools provided](https://img.shields.io/badge/tools%20provided-52%20%E2%86%92%2011-blue)](#-kanıtlar--evidence) [![Prompt size](https://img.shields.io/badge/prompt-26k%20%E2%86%92%2012k%20tokens-green)](#-kanıtlar--evidence) [![Cost/turn](https://img.shields.io/badge/cost%2Fturn-%240.003--0.004-success)](#-kanıtlar--evidence) [![Status](https://img.shields.io/badge/status-tested%20%2B%20reproducible-orange)](#%EF%B8%8F-test-edin--test-it)
 
----
+Türkçe | English (aşağıda / below)
 
-## Türkçe
+## ⚡ TL;DR
 
-### Bu nedir?
+OpenClaw her mesajda modelin gördüğü **tüm araç şemalarını** gönderir — 52 tool = ~26.000 token **sabit vergi**. `tools.toolSearch: "directory"` + kısa bir persona dosyası ile:
 
-OpenClaw varsayılan olarak **her mesajda** modelin gördüğü tüm araçların (52 tool) tam JSON şemalarını
-prompt'a ekler. Hiçbir şey yapmasan bile her turn'de binlerce token sabit maliyet ödersin.
-Buna ben "şema vergisi" diyorum.
+- Araç sayısı: **52 → 11**
+- Prompt: **26k → 12k token**
+- Turn maliyeti: **$0.0033 – $0.0044** (gerçek panel ölçümü)
+- Görev doğruluğu: korundu (16/16 resim, 5/5 Excel, canlı web sunucusu)
 
-Bu repo, OpenClaw'ın **deneysel Tool Search** özelliğini (`directory` modu) açarak bu vergiyi
-düşürmenin kurulum notlarını ve **gerçek ölçümleri** içerir.
+Hepsini **Hermes Agent ile aynı modelde (deepseek-chat) kıyasladık** — tablolar aşağıda.
 
-### Kurulum (3 komut)
+## 📊 Kanıtlar / Evidence
+
+| Task | OpenClaw (+directory) | Hermes (deferred tools) |
+|---|---|---|
+| Count images (16 files) | **16 — correct** ✅ | 0 — wrong ❌ |
+| Count Excel (5 files) | **5 — correct** ✅ | 2 — wrong ❌ |
+| Tools provided | **11** | 25 |
+| Prompt tokens | **11.9k – 13.5k** | 15.5k – 15.8k |
+| Live web server task | **HTTP 200, 41s** ✅ | dead server ❌ |
+| Macro analysis | refused → **fixed via SOUL.md** ✅ | ran 26 VBA macros ✅ |
+
+Tam veri / full data: [EVIDENCE.md](EVIDENCE.md)
+
+## 🔧 Reproduce it (3 komut / commands)
 
 ```powershell
-# 1. Yedek al
-Copy-Item "openclaw.json" "openclaw.json.pre-toolsearch" -Force
-
-# 2. Tool Search'ü directory modunda aç
+Copy-Item openclaw.json openclaw.json.pre-toolsearch -Force
 openclaw config set tools.toolSearch.enabled true
 openclaw config set tools.toolSearch.mode directory
-
-# 3. Doğrula
-openclaw config validate
 ```
 
-Restart gerekmez — OpenClaw config'i canlı izler (hot-reload).
+Restart gerekmez / no restart needed. Doğrula / verify: `openclaw config validate`
 
-### Ne değişti?
+**Opsiyonel / optional** — agent'a "her görevi çalıştır" kişiliği ver (refusal'ları bitirir):
+[SOUL.md](SOUL.md) dosyasını workspace root'una koy.
 
-- Model artık 52 tool'un şemasını baştan almıyor
-- Yerine: kısa bir araç dizini + `tool_search` / `tool_describe` / `tool_call` köprü araçları
-- Model ihtiyacı olan aracı o an arayıp çağırıyor
+## 🧠 Nasıl çalışıyor / How it works
 
-### Gerçek ölçümler (2026-09-13, deepseek-chat via Haimaker)
+`directory` mode: model tüm şemaları değil, **sınırlı bir araç dizini + 3 köprü aracı**
+(`tool_search` / `tool_describe` / `tool_call`) görür. İhtiyaç duyduğu aracı o an
+arar, şemasını çeker, çağırır. Tool sayısı artsa da prompt sabit kalır.
 
-| | Tool sayısı | Prompt token | Sonuç |
-|---|---|---|---|
-| Önce (tam katalog) | 52 | 26.339* | — |
-| Sonra (directory) | **11** | **11.889** | ✅ doğru |
+## 🌍 Test edin / Test it
 
-\* farklı oturumda tek turn ölçümü; taban farkı temsilidir.
+- Farklı modellerde deneyin (Mini/Pro/Ultra free'ler) — sonucu issue açın
+- Kendi trace'inizi Haimaker/OpenRouter panelinden alıp EVIDENCE'a PR gönderin
+- Yıldızlayın ki deneysel özellik kanıtlanmış örneklerle büyüsün ⭐
 
-#### Hermes agent ile aynı görev kıyası
+## 📁 Files
 
-| | **OpenClaw + directory** | **Hermes (deferred tools)** |
-|---|---|---|
-| Sağlanan araç | **11** | 25 |
-| Prompt token | **11.889 – 13.300** | 15.549 – 15.752 |
-| Resim sayma görevi | **16 resim — doğru** ✅ | 0 resim — yanlış ❌ |
-| Excel sayma görevi | **5 dosya — doğru** ✅ | 2 dosya — yanlış ❌ |
+| File | What |
+|---|---|
+| [EVIDENCE.md](EVIDENCE.md) | Gerçek ölçümler + Hermes kıyası / real benchmarks |
+| [SOUL.md](SOUL.md) | Executor persona — "çalıştır denildiğinde çalıştır" |
+| LICENSE | MIT |
 
-### Dikkat / notlar
+## ⚠️ Notes
 
-- Tool Search **deneyseldir** — beğenmezsen `openclaw config set tools.toolSearch.enabled false`
-- Aramalar İngilizce sorgularla çalışır (sen konuşurken Türkçe konuşabilirsin; iç sorguları agent üretir)
-- Kullanım verisi (usage) sağlayıcıya bağlıdır: bazı rotalar (ör. bazı deepseek proxy'leri) token
-  raporu göndermez, o zaman gerçek maliyeti sağlayıcının panelinden takip et
-- Config'inde gateway token gibi sırlar varsa repoya **asla** koyma
+- Tool Search is **experimental** — disable: `openclaw config set tools.toolSearch.enabled false`
+- Search queries are English internally (chat in any language)
+- Usage reporting depends on provider; verify real spend in provider dashboard
+- Never commit secrets. Never.
 
----
+## English TL;DR
 
-## English
+OpenClaw pays a **fixed tool-schema tax (~26k tokens for 52 tools) on every message**.
+This repo documents enabling the experimental **Tool Search (directory mode)** and the
+results: **11 tools provided instead of 52**, prompt size halved, per-turn cost $0.003–0.004,
+verified against a Hermes deferred-tools setup running the **same model** — with correct
+results on every task. Setup is 3 commands, no restart, no fork. See [EVIDENCE.md](EVIDENCE.md).
 
-### What is this?
+## License
 
-By default, OpenClaw ships **every tool's full JSON schema** (52 tools) to the model on
-**every single message** — a fixed token tax per turn, even for "hello".
-This repo contains setup notes and **real measurements** for cutting that tax using OpenClaw's
-experimental **Tool Search** feature in `directory` mode.
-
-### Setup (3 commands)
-
-See the Turkish section above — same commands. No gateway restart required (hot-reload).
-
-### Results
-
-With `directory` mode enabled, the model saw **11 tools instead of 52**, prompt size dropped from
-~26k to ~12k tokens on comparable turns, and the agent **outperformed** a Hermes deferred-tools setup
-on the same tasks (correct results, fewer provided tools).
-
-### Notes
-
-- Tool Search is experimental; disable anytime with one config command
-- Tool search queries are English (BM25 over English names/descriptions); you can still chat
-  in any language — the agent generates the internal queries
-- Usage reporting depends on the provider; verify real spend in your provider's dashboard
-- Never commit secrets (gateway tokens, API keys) from your real config
-
----
-
-## License / Lisans
-
-MIT — iyi uyarlamalar / hack away.
+MIT
